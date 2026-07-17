@@ -112,7 +112,11 @@ export async function callOpenRouter(
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ model, messages }),
+    body: JSON.stringify({
+      model,
+      messages,
+      provider: { allow_fallbacks: false },
+    }),
   })
 
   if (!res.ok) {
