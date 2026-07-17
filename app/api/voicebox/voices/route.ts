@@ -1,28 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import type { Voice, VoiceProfileData } from "@/lib/types"
-
-function toVoice(record: {
-  id: string
-  userId: string
-  name: string
-  sourceType: string
-  samples: string
-  profile: string
-  createdAt: Date
-  updatedAt: Date
-}): Voice {
-  return {
-    id: record.id,
-    userId: record.userId,
-    name: record.name,
-    sourceType: record.sourceType as "own" | "writer",
-    samples: JSON.parse(record.samples) as string[],
-    profile: JSON.parse(record.profile) as VoiceProfileData,
-    createdAt: record.createdAt.toISOString(),
-  }
-}
+import { toVoice } from "@/lib/voice"
 
 export async function GET() {
   const session = await auth()
