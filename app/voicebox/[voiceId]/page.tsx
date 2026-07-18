@@ -1,274 +1,299 @@
 "use client"
 
-import { useSession } from "next-auth/react"
-import { useEffect, useRef, useState } from "react"
+import { use, useEffect, useState, useRef } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import type { Voice, Generation } from "@/lib/types"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Separator } from "@/components/ui/separator"
+import { ArrowLeft, Settings, Loader2, Send, Trash2, Save } from "lucide-react"
 
-type ChatMessage = {
-  id: string
-  role: "user" | "assistant"
-  content: string
-  createdAt: string
-}
-
-function SettingsModal({
-  voice,
-  onClose,
-  onUpdated,
-  onDeleted,
-}: {
-  voice: Voice
-  onClose: () => void
-  onUpdated: (name: string) => void
-  onDeleted: () => void
-}) {
-  const [name, setName] = useState(voice.name)
-  const [confirmDelete, setConfirmDelete] = useState("")
-  const [error, setError] = useState("")
-
-  async function handleRename() {
-    setError("")
-    const res = await fetch(`/api/voicebox/voices/${voice.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
-    })
-    if (res.ok) {
-      onUpdated(name)
-    } else {
-      const data = await res.json()
-      setError(data.error || "Rename failed")
-    }
-  }
-
-  async function handleDelete() {
-    if (confirmDelete !== voice.name) return
-    setError("")
-    const res = await fetch(`/api/voicebox/voices/${voice.id}`, {
-      method: "DELETE",
-    })
-    if (res.ok) {
-      onDeleted()
-    } else {
-      const data = await res.json()
-      setError(data.error || "Delete failed")
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="bg-white rounded-xl p-6 w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-xl font-bold">Settings</h2>
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-
-        <div>
-          <label className="block text-sm font-medium">Voice Name</label>
-          <div className="flex gap-2 mt-1">
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="border rounded px-2 py-1 flex-1" />
-            <button onClick={handleRename} className="px-3 py-1 bg-blue-600 text-white rounded text-sm">Save</button>
-          </div>
-        </div>
-
-        <div>
-          <span className="text-sm font-medium">Source Type: </span>
-          <span className="text-sm text-gray-600">{voice.sourceType === "own" ? "Own writing" : "Writer style"}</span>
-        </div>
-
-        <hr />
-
-        <div>
-          <label className="block text-sm font-medium text-red-600">Delete Voice</label>
-          <p className="text-xs text-gray-500 mt-1">Type <strong>{voice.name}</strong> to confirm:</p>
-          <input
-            type="text"
-            value={confirmDelete}
-            onChange={(e) => setConfirmDelete(e.target.value)}
-            placeholder={voice.name}
-            className="border rounded px-2 py-1 w-full mt-1"
-          />
-          <button
-            onClick={handleDelete}
-            disabled={confirmDelete !== voice.name}
-            className="mt-2 px-3 py-1 bg-red-600 text-white rounded text-sm disabled:opacity-50"
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export default function VoiceChatPage({
-  params,
-}: {
+interface ChatPageProps {
   params: Promise<{ voiceId: string }>
-}) {
-  const { data: session, status } = useSession()
+}
+
+export default function ChatPage({ params }: ChatPageProps) {
+  const resolvedParams = use(params)
+  const { status } = useSession()
   const router = useRouter()
   const [voice, setVoice] = useState<Voice | null>(null)
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [input, setInput] = useState("")
-  const [sending, setSending] = useState(false)
-  const [error, setError] = useState("")
-  const [voiceId, setVoiceId] = useState<string | null>(null)
+  const [generations, setGenerations] = useState<Generation[]>([])
+  const [dataLoaded, setDataLoaded] = useState(false)
+  const [message, setMessage] = useState("")
+  const [isSending, setIsSending] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [editingName, setEditingName] = useState("")
+  const [deleteConfirm, setDeleteConfirm] = useState("")
+  const [error, setError] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    params.then((p) => setVoiceId(p.voiceId))
-  }, [params])
-
-  useEffect(() => {
-    if (!voiceId || status !== "authenticated") return
-    fetch(`/api/voicebox/voices/${voiceId}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: Voice | null) => {
-        if (data) {
-          setVoice(data)
-          loadHistory(voiceId)
-        } else {
-          setVoice(null)
-        }
-      })
-  }, [voiceId, status])
-
-  useEffect(() => {
+  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [generations])
 
   async function loadHistory(vId: string) {
     const res = await fetch(`/api/voicebox/chat/${vId}`)
     if (!res.ok) return
     const data: Generation[] = await res.json()
-    const msgs: ChatMessage[] = []
-    for (const g of data) {
-      msgs.push({ id: `${g.id}-user`, role: "user", content: g.userMsg, createdAt: g.createdAt })
-      msgs.push({ id: `${g.id}-assistant`, role: "assistant", content: g.reply, createdAt: g.createdAt })
-    }
-    setMessages(msgs)
+    setGenerations(data)
   }
 
-  async function handleSend() {
-    if (!input.trim() || !voiceId || sending) return
-    const userMsg = input.trim()
-    setInput("")
+  useEffect(() => {
+    if (status === "loading") return
+    if (status !== "authenticated" || !resolvedParams.voiceId) return
+    fetch(`/api/voicebox/voices/${resolvedParams.voiceId}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: Voice | null) => {
+        if (data) {
+          setVoice(data)
+          loadHistory(resolvedParams.voiceId)
+        }
+        setDataLoaded(true)
+      })
+  }, [status, resolvedParams.voiceId])
+
+  const handleSendMessage = async () => {
+    if (!message.trim() || !voice || isSending) return
+
+    const userMsg = message
+    setMessage("")
     setError("")
+    setIsSending(true)
 
-    const optimistic: ChatMessage = {
-      id: `opt-${Date.now()}`,
-      role: "user",
-      content: userMsg,
-      createdAt: new Date().toISOString(),
-    }
-    setMessages((prev) => [...prev, optimistic])
-    setSending(true)
+    try {
+      const res = await fetch(`/api/voicebox/chat/${voice.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userMsg }),
+      })
 
-    const res = await fetch(`/api/voicebox/chat/${voiceId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: userMsg }),
-    })
+      if (!res.ok) {
+        const errData = await res.json()
+        throw new Error(errData.error || "Failed to send message")
+      }
 
-    if (res.ok) {
       const data = await res.json()
-      setMessages((prev) =>
-        prev.map((m) => (m.id === optimistic.id ? { ...m, id: data.generation.id + "-user" } : m)),
-      )
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: data.generation.id + "-assistant",
-          role: "assistant",
-          content: data.reply,
-          createdAt: data.generation.createdAt,
-        },
-      ])
-    } else {
-      const errData = await res.json()
-      setError(errData.error || "Failed to send message")
-      setMessages((prev) => prev.filter((m) => m.id !== optimistic.id))
+      setGenerations((prev) => [...prev, data.generation])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send message")
+    } finally {
+      setIsSending(false)
     }
-
-    setSending(false)
   }
 
-  if (status === "loading") return <div className="p-8">Loading...</div>
-  if (status === "unauthenticated") return <div className="p-8">Please sign in to view this page.</div>
-  if (voice === null) return <div className="p-8 text-gray-500">Voice not found.</div>
+  const handleSaveName = async () => {
+    if (!editingName.trim() || !voice) return
+    const res = await fetch(`/api/voicebox/voices/${voice.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: editingName }),
+    })
+    if (res.ok) {
+      setVoice({ ...voice, name: editingName })
+      setShowSettings(false)
+    }
+  }
+
+  const handleDeleteVoice = async () => {
+    if (deleteConfirm !== voice?.name || !voice) return
+    const res = await fetch(`/api/voicebox/voices/${voice.id}`, {
+      method: "DELETE",
+    })
+    if (res.ok) {
+      router.push("/voicebox")
+    }
+  }
+
+  if (status === "loading" || (status === "authenticated" && !dataLoaded)) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (status === "unauthenticated") {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center flex-col gap-4">
+        <p className="text-muted-foreground">Please sign in to access this voice</p>
+        <Link href="/voicebox">
+          <Button>Go to Voices</Button>
+        </Link>
+      </div>
+    )
+  }
+
+  if (!voice) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center flex-col gap-4">
+        <p className="text-muted-foreground">Voice not found</p>
+        <Link href="/voicebox">
+          <Button>Go to Voices</Button>
+        </Link>
+      </div>
+    )
+  }
 
   return (
-    <div className="flex flex-col h-screen max-w-3xl mx-auto">
-      <div className="flex items-center justify-between px-6 py-4 border-b">
-        <h1 className="text-xl font-bold">{voice.name}</h1>
-        <button onClick={() => setShowSettings(true)} className="text-gray-500 hover:text-gray-700 text-2xl" aria-label="Settings">
-          ⚙
+    <div className="h-screen flex flex-col bg-background">
+      {/* Header */}
+      <header className="border-b border-border flex items-center justify-between px-6 py-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex items-center gap-4">
+          <Link href="/voicebox">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <h1 className="text-xl font-semibold">{voice.name}</h1>
+        </div>
+
+        <button
+          onClick={() => {
+            setEditingName(voice.name)
+            setShowSettings(true)
+          }}
+          className="p-2 rounded-lg hover:bg-muted transition-colors"
+        >
+          <Settings className="h-5 w-5" />
         </button>
-      </div>
+      </header>
 
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-        {messages.length === 0 && (
-          <p className="text-center text-gray-400 mt-12">Start a conversation with {voice.name}</p>
-        )}
-
-        {messages.map((msg) => (
-          <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-            <div
-              className={`max-w-[80%] rounded-xl px-4 py-2 ${
-                msg.role === "user" ? "bg-gray-200 text-gray-900" : "bg-white border text-gray-900"
-              }`}
-            >
-              <p className="text-xs text-gray-500 mb-1">{msg.role === "user" ? "You" : voice.name}</p>
-              <p className="whitespace-pre-wrap">{msg.content}</p>
-              <p className="text-xs text-gray-400 mt-1">
-                {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+      {/* Messages Container */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        {generations.length === 0 ? (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center max-w-sm">
+              <h2 className="text-xl font-semibold mb-2">Start a conversation</h2>
+              <p className="text-muted-foreground mb-4">
+                Share your ideas and I&apos;ll draft responses in {voice.name}&apos;s voice.
+              </p>
+              <p className="text-sm text-muted-foreground bg-muted rounded-lg p-3 italic">
+                &quot;What would be a good topic to explore in my next post?&quot;
               </p>
             </div>
           </div>
-        ))}
+        ) : (
+          <>
+            {generations.map((gen) => (
+              <div key={gen.id} className="space-y-2">
+                {/* User Message */}
+                <div className="flex justify-end">
+                  <div className="max-w-sm bg-gray-200 dark:bg-gray-700 text-foreground px-4 py-2 rounded-lg">
+                    <p className="text-sm">{gen.userMsg}</p>
+                  </div>
+                </div>
+
+                {/* Assistant Message */}
+                <div className="flex justify-start">
+                  <div className="max-w-sm bg-card border border-border text-card-foreground px-4 py-2 rounded-lg">
+                    <p className="text-sm">{gen.reply}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </>
+        )}
 
         {error && (
           <div className="bg-red-50 border border-red-200 rounded px-4 py-2 text-red-600 text-sm">{error}</div>
         )}
-
-        <div ref={messagesEndRef} />
       </div>
 
-      <div className="border-t px-6 py-4">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-            placeholder="Type a message..."
-            disabled={sending}
-            className="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+      {/* Input Bar */}
+      <div className="border-t border-border p-4 bg-background">
+        <div className="mx-auto max-w-4xl flex gap-2">
+          <Input
+            placeholder="Type your idea..."
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault()
+                handleSendMessage()
+              }
+            }}
+            disabled={isSending}
+            maxLength={2000}
+            className="flex-1"
           />
-          <button
-            onClick={handleSend}
-            disabled={!input.trim() || sending}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50 hover:bg-blue-700"
+          <Button
+            onClick={handleSendMessage}
+            disabled={isSending || !message.trim()}
+            size="icon"
+            className="bg-blue-600 hover:bg-blue-700"
           >
-            {sending ? "..." : "Send"}
-          </button>
+            {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          </Button>
         </div>
+        {message.length > 1800 && (
+          <p className="text-xs text-muted-foreground mt-2 text-right">
+            {2000 - message.length} characters remaining
+          </p>
+        )}
       </div>
 
-      {showSettings && (
-        <SettingsModal
-          voice={voice}
-          onClose={() => setShowSettings(false)}
-          onUpdated={(name) => {
-            setVoice({ ...voice, name })
-            setShowSettings(false)
-          }}
-          onDeleted={() => {
-            router.push("/voicebox")
-          }}
-        />
-      )}
+      {/* Settings Modal */}
+      <Dialog open={showSettings} onOpenChange={setShowSettings}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Voice Settings</DialogTitle>
+            <DialogDescription>Manage your voice profile</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Rename Section */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">Voice Name</label>
+              <Input
+                value={editingName}
+                onChange={(e) => setEditingName(e.target.value)}
+                placeholder="Enter new name"
+              />
+              <Button onClick={handleSaveName} className="w-full mt-2">
+                <Save className="h-4 w-4 mr-2" />
+                Save Name
+              </Button>
+            </div>
+
+            <Separator />
+
+            {/* Delete Section */}
+            <div>
+              <h3 className="font-medium text-destructive mb-2 flex items-center gap-2">
+                <Trash2 className="h-4 w-4" />
+                Delete Voice
+              </h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                This action cannot be undone. Type the voice name to confirm deletion.
+              </p>
+              <Input
+                placeholder={`Type "${voice.name}" to confirm`}
+                value={deleteConfirm}
+                onChange={(e) => setDeleteConfirm(e.target.value)}
+              />
+              <Button
+                onClick={handleDeleteVoice}
+                disabled={deleteConfirm !== voice.name}
+                variant="destructive"
+                className="w-full mt-2"
+              >
+                Delete Voice
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
