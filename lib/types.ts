@@ -19,9 +19,10 @@ export type Generation = {
   id: string
   userId: string
   voiceId: string
-  input: string
+  userMsg: string
   draft: string
-  output: string
-  edited?: string
+  reply: string
+  draftModel: string
+  styleModel: string
   createdAt: string
 }

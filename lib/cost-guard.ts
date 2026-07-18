@@ -89,8 +89,9 @@ export function postCheck(provider: LLMProvider, responseData: unknown): void {
 
 export async function callOpenRouter(
   messages: { role: string; content: string }[],
+  modelOverride?: string,
 ): Promise<unknown> {
-  const model = process.env.OPENROUTER_MODEL
+  const model = modelOverride || process.env.OPENROUTER_MODEL
   if (!model) {
     throw new Error(
       "callOpenRouter: OPENROUTER_MODEL env var is not set. Cannot make API call.",

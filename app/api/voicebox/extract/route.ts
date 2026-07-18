@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { toVoice } from "@/lib/voice"
-import { callOpenRouter, callGemini } from "@/lib/cost-guard"
+import { callOpenRouter } from "@/lib/cost-guard"
 import {
   buildAnalyzeSamplesPrompt,
   buildStructureProfilePrompt,
@@ -61,35 +61,42 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  const structureModel =
+    process.env.OPENROUTER_STRUCTURE_MODEL
+
   const structurePrompt = buildStructureProfilePrompt(rawAnalysis)
 
-  let geminiResult: unknown
+  let structureResult: unknown
   try {
-    geminiResult = await callGemini(structurePrompt)
+    structureResult = await callOpenRouter(
+      [{ role: "user", content: structurePrompt }],
+      structureModel,
+    )
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error"
-    console.error("[extract] Gemini call failed:", message)
+    console.error("[extract] Structure call failed:", message)
     return NextResponse.json(
       { error: `Refinement failed: ${message}` },
       { status: 502 },
     )
   }
 
-  const geminiResponse = geminiResult as {
-    response: { text: () => string }
+  const structureBody = structureResult as {
+    choices?: { message?: { content?: string } }[]
   }
-  const geminiText = geminiResponse?.response?.text()
+  const structureText =
+    structureBody?.choices?.[0]?.message?.content || ""
 
-  if (!geminiText) {
+  if (!structureText) {
     return NextResponse.json(
-      { error: "Refinement failed: no content in Gemini response" },
+      { error: "Refinement failed: no content in response" },
       { status: 502 },
     )
   }
 
   let profile: VoiceProfileData
   try {
-    profile = JSON.parse(geminiText) as VoiceProfileData
+    profile = JSON.parse(structureText) as VoiceProfileData
     if (
       typeof profile.sentenceRhythm !== "string" ||
       typeof profile.vocabularyTendencies !== "string" ||
@@ -100,7 +107,7 @@ export async function POST(req: NextRequest) {
     }
   } catch (e) {
     const message = e instanceof Error ? e.message : "Invalid JSON"
-    console.error("[extract] Failed to parse Gemini output:", geminiText)
+    console.error("[extract] Failed to parse structure output:", structureText)
     return NextResponse.json(
       { error: `Extraction failed: could not parse profile — ${message}` },
       { status: 502 },

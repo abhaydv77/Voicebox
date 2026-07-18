@@ -25,7 +25,7 @@
 ### SPEC-004: Voice Extraction Pipeline
 - `lib/prompts.ts` — `buildAnalyzeSamplesPrompt` (free-form observations, no JSON) and `buildStructureProfilePrompt` (strict VoiceProfileData JSON)
 - `lib/voice.ts` — shared `toVoice()` utility (extracted from CRUD routes)
-- `POST /api/voicebox/extract` — two-call pipeline: OpenRouter analysis → Gemini structuring → save profile to DB
+- `POST /api/voicebox/extract` — two-call pipeline: OpenRouter analysis → OpenRouter structuring → save profile to DB. Both stages go through `callOpenRouter` with separate models.
 - Voice detail page at `/voicebox/[voiceId]` — shows profile, "Extract" button with loading/error states
 - 502 errors propagated cleanly from both LLM calls
 
@@ -38,8 +38,9 @@
 
 | Var | Current value | Notes |
 |-----|---------------|-------|
-| `OPENROUTER_MODEL` | `tencent/hy3:free` | Was `gpt-oss-20b:free` (requires funded balance). Swap via env only. |
-| `GEMINI_MODEL` | `gemini-2.0-flash` | Was `gemini-2.5-flash` (deprecated for new users). |
+| `OPENROUTER_MODEL` | `tencent/hy3:free` | Stage 1 analysis model. Was `gpt-oss-20b:free` (requires funded balance). |
+| `OPENROUTER_STRUCTURE_MODEL` | `nvidia/nemotron-3-ultra-550b-a55b:free` | Stage 2 structuring model (replaced Gemini). |
+| `GEMINI_MODEL` | `gemini-2.0-flash` | Not currently used by extraction pipeline (kept for future specs). |
 | `OPENROUTER_API_KEY` | set | Get at https://openrouter.ai/keys |
 | `GEMINI_API_KEY` | set | Use https://aistudio.google.com/app/apikey (not Google Cloud console) |
 
