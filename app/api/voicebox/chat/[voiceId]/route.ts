@@ -54,10 +54,27 @@ export async function POST(
   }
 
   const { voiceId } = await params
-  const { message } = await req.json()
+
+  let message: string
+  try {
+    const body = await req.json()
+    message = body.message
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid JSON in request body" },
+      { status: 400 },
+    )
+  }
 
   if (!message || typeof message !== "string") {
     return NextResponse.json({ error: "message is required" }, { status: 400 })
+  }
+
+  if (message.length > 2000) {
+    return NextResponse.json(
+      { error: "Message must be 2000 characters or fewer" },
+      { status: 400 },
+    )
   }
 
   const voiceRecord = await prisma.voice.findUnique({ where: { id: voiceId } })
