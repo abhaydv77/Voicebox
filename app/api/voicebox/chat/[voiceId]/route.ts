@@ -82,7 +82,7 @@ export async function POST(
     return NextResponse.json({ error: "Not found" }, { status: 404 })
   }
 
-  const profile = JSON.parse(voiceRecord.profile) as {
+  const profile = voiceRecord.profile as {
     sentenceRhythm: string
     vocabularyTendencies: string
     punctuationHabits: string

@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not found" }, { status: 404 })
   }
 
-  const samples: string[] = JSON.parse(record.samples)
+  const samples = record.samples as string[]
   const sourceType = record.sourceType as "own" | "writer"
 
   const analyzePrompt = buildAnalyzeSamplesPrompt({
@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
 
   const updated = await prisma.voice.update({
     where: { id: voiceId },
-    data: { profile: JSON.stringify(profile) },
+    data: { profile },
   })
 
   return NextResponse.json(toVoice(updated))

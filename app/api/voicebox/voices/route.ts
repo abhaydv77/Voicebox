@@ -65,8 +65,8 @@ export async function POST(req: NextRequest) {
       userId: session.user.id,
       name,
       sourceType,
-      samples: JSON.stringify(samples),
-      profile: JSON.stringify(profile),
+      samples,
+      profile,
     },
   })
 

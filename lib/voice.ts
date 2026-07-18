@@ -5,8 +5,8 @@ export type VoiceRecord = {
   userId: string
   name: string
   sourceType: string
-  samples: string
-  profile: string
+  samples: unknown
+  profile: unknown
   createdAt: Date
   updatedAt: Date
 }
@@ -17,8 +17,8 @@ export function toVoice(record: VoiceRecord): Voice {
     userId: record.userId,
     name: record.name,
     sourceType: record.sourceType as "own" | "writer",
-    samples: JSON.parse(record.samples) as string[],
-    profile: JSON.parse(record.profile) as VoiceProfileData,
+    samples: record.samples as string[],
+    profile: record.profile as VoiceProfileData,
     createdAt: record.createdAt.toISOString(),
   }
 }

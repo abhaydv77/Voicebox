@@ -43,7 +43,7 @@ export async function PATCH(
   }
 
   const body = await req.json()
-  const data: Record<string, string> = {}
+  const data: Record<string, unknown> = {}
 
   if (body.name !== undefined) data.name = body.name
   if (body.sourceType !== undefined) {
@@ -62,10 +62,10 @@ export async function PATCH(
         { status: 400 },
       )
     }
-    data.samples = JSON.stringify(body.samples)
+    data.samples = body.samples
   }
   if (body.profile !== undefined) {
-    data.profile = JSON.stringify(body.profile)
+    data.profile = body.profile
   }
 
   const updated = await prisma.voice.update({
