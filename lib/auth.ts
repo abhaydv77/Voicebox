@@ -1,6 +1,7 @@
 import NextAuth from "next-auth"
 import { DefaultSession } from "next-auth"
 import Credentials from "next-auth/providers/credentials"
+import GoogleProvider from "next-auth/providers/google"
 import { compare } from "bcryptjs"
 import { prisma } from "./prisma"
 
@@ -14,6 +15,10 @@ declare module "next-auth" {
 
 const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
     Credentials({
       credentials: {
         email: { label: "Email", type: "email" },
@@ -37,6 +42,19 @@ const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   session: { strategy: "jwt" },
   callbacks: {
+    async signIn({ user, account }) {
+      if (account?.provider === "google") {
+        await prisma.user.upsert({
+          where: { email: user.email! },
+          update: { name: user.name },
+          create: {
+            email: user.email!,
+            name: user.name,
+          },
+        })
+      }
+      return true
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
