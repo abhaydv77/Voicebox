@@ -78,8 +78,14 @@ export function AddVoiceModal({
       })
 
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Failed to create voice')
+        let errorMsg = 'Failed to create voice'
+        try {
+          const data = await res.json()
+          errorMsg = data.error || errorMsg
+        } catch {
+          errorMsg = `${errorMsg} (${res.status})`
+        }
+        throw new Error(errorMsg)
       }
 
       const newVoice: Voice = await res.json()

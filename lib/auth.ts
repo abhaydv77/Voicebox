@@ -44,7 +44,7 @@ const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async signIn({ user, account }) {
       if (account?.provider === "google") {
-        await prisma.user.upsert({
+        const dbUser = await prisma.user.upsert({
           where: { email: user.email! },
           update: { name: user.name },
           create: {
@@ -52,6 +52,7 @@ const { handlers, auth, signIn, signOut } = NextAuth({
             name: user.name,
           },
         })
+        user.id = dbUser.id
       }
       return true
     },
