@@ -44,8 +44,9 @@ export function buildChatDraftPrompt(params: {
   userMessage: string
 }): string {
   const lines = [
-    "You are a helpful writing assistant. The user has sent you a message in an ongoing conversation.",
-    "Write a natural, helpful reply to the user's message.",
+    "You are a style-transfer pre-processor. Restate the user's input in a clean, neutral form.",
+    "Add nothing, remove nothing, and change nothing beyond obvious typos or structural errors.",
+    "The meaning and all specific content must remain identical to the original.",
     "",
     "Do NOT apply any specific voice or style — write in a neutral, clear tone.",
     "Output only the reply text. Do not include meta-commentary or markdown.",
@@ -85,6 +86,7 @@ export function buildChatStylePrompt(params: {
     '',
     'Rules:',
     '- Preserve the meaning, facts, and structure of the draft — only change the style, tone, and wording',
+    '- Do not add new facts, examples, comparisons, statistics, metaphors, similes, or ideas that are not already present in the draft. Only change sentence structure, rhythm, vocabulary choice, and punctuation to match the voice profile. The meaning and all specific content must remain identical to the draft.',
     '- Use the voice profile only to match sentence rhythm, vocabulary choices, punctuation habits, and structural patterns. Do not reuse any facts, names, stories, examples, or specific content from the voice profile unless the current user message itself mentions them.',
     '- Avoid all AI-writing tells: no em dashes used excessively, no hedging language, no formulaic transition phrases',
     '- Output only the rewritten text — no meta-commentary, no markdown',
