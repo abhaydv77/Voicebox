@@ -89,6 +89,8 @@ export async function POST(
     structuralHabits: string
   }
 
+  const samples = voiceRecord.samples as string[]
+
   if (
     !profile.sentenceRhythm &&
     !profile.vocabularyTendencies &&
@@ -146,6 +148,7 @@ export async function POST(
 
   const stylePrompt = buildChatStylePrompt({
     profile,
+    samples,
     draft,
     userMessage: message,
     conversationHistory,

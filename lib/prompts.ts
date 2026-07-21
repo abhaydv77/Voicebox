@@ -69,46 +69,52 @@ export function buildChatDraftPrompt(params: {
 
 export function buildChatStylePrompt(params: {
   profile: import("./types").VoiceProfileData
+  samples: string[]
   draft: string
   userMessage: string
   conversationHistory: { role: "user" | "assistant"; content: string }[]
 }): string {
   const profile = params.profile
+  const sampleText = params.samples.join("\n\n---\n\n")
   const lines = [
-    'You are a style-rewriting engine. Your task is to rewrite a draft so it sounds like it was written by the voice described below.',
-    '',
-    '--- VOICE PROFILE ---',
+    "You are an expert ghostwriter and voice-cloning assistant. Your objective is to write new content that perfectly matches the user's personal writing style.",
+    "",
+    "### Inputs Provided:",
+    "",
+    "1. **Extracted Voice Profile:**",
     `Sentence rhythm: ${profile.sentenceRhythm}`,
     `Vocabulary tendencies: ${profile.vocabularyTendencies}`,
     `Punctuation habits: ${profile.punctuationHabits}`,
     `Structural habits: ${profile.structuralHabits}`,
-    '--- END PROFILE ---',
-    '',
-    'Rules:',
-    '- Preserve the meaning, facts, and structure of the draft — only change the style, tone, and wording',
-    '- Do not add new facts, examples, comparisons, statistics, metaphors, similes, or ideas that are not already present in the draft. Only change sentence structure, rhythm, vocabulary choice, and punctuation to match the voice profile. The meaning and all specific content must remain identical to the draft.',
-    '- Use the voice profile only to match sentence rhythm, vocabulary choices, punctuation habits, and structural patterns. Do not reuse any facts, names, stories, examples, or specific content from the voice profile unless the current user message itself mentions them.',
-    '- Avoid all AI-writing tells: no em dashes used excessively, no hedging language, no formulaic transition phrases',
-    '- Output only the rewritten text — no meta-commentary, no markdown',
+    "",
+    "2. **Raw Reference Writing Samples (FEW-SHOT EXAMPLES):**",
+    sampleText,
+    "",
+    "3. **Topic / Target Prompt for New Content:**",
+    params.draft,
+    "",
+    "### STRICT STYLE MATCHING RULES:",
+    "- **Rhythm & Structure:** Analyze the sentence length, punctuation patterns, paragraph cadence, and flow of the Raw Reference Writing Samples and replicate them closely.",
+    "- **Tone & Vocabulary:** Match the vocabulary density, transition words, and tone described in the Extracted Voice Profile.",
+    "- **CRITICAL CONSTRAINT:** Do NOT copy any facts, entities, specific topics, or exact phrases from the reference samples. Use them strictly as a stylistic template, not content sources. Do not add new facts, examples, comparisons, statistics, metaphors, similes, or ideas that are not already present in the target prompt.",
+    "- **Output:** Generate the content directly based on the Topic / Target Prompt, using the style and rhythm derived from the raw reference samples. Output only the generated text — no meta-commentary, no markdown. Avoid all AI-writing tells: no em dashes used excessively, no hedging language, no formulaic transition phrases.",
   ]
 
   if (params.conversationHistory.length > 0) {
     lines.push('')
-    lines.push('The user is responding to the ongoing conversation. Apply their feedback (e.g. making it more casual, more professional, shorter) while also matching the voice profile.')
-    lines.push('')
-    lines.push('Conversation history:')
+    lines.push('### Conversation History:')
     for (const msg of params.conversationHistory) {
       const label = msg.role === "user" ? "User" : "Assistant"
       lines.push(`${label}: ${msg.content}`)
     }
+    lines.push('')
+    lines.push('When the user provides feedback (e.g. "make it more casual"), apply that feedback while maintaining the voice style from the samples and profile.')
   }
 
   lines.push('')
   lines.push(`User message: ${params.userMessage}`)
   lines.push('')
-  lines.push(`Draft to rewrite: ${params.draft}`)
-  lines.push('')
-  lines.push('Rewritten:')
+  lines.push('Generated:')
 
   return lines.join("\n")
 }
