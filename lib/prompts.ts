@@ -94,10 +94,18 @@ export function buildChatStylePrompt(params: {
     params.draft,
     "",
     "### STRICT STYLE MATCHING RULES:",
-    "- **Rhythm & Structure:** Analyze the sentence length, punctuation patterns, paragraph cadence, and flow of the Raw Reference Writing Samples and replicate them closely.",
-    "- **Tone & Vocabulary:** Match the vocabulary density, transition words, and tone described in the Extracted Voice Profile.",
-    "- **CRITICAL CONSTRAINT:** Do NOT copy any facts, entities, specific topics, or exact phrases from the reference samples. Use them strictly as a stylistic template, not content sources. Do not add new facts, examples, comparisons, statistics, metaphors, similes, or ideas that are not already present in the target prompt.",
-    "- **Output:** Generate the content directly based on the Topic / Target Prompt, using the style and rhythm derived from the raw reference samples. Output only the generated text — no meta-commentary, no markdown. Avoid all AI-writing tells: no em dashes used excessively, no hedging language, no formulaic transition phrases.",
+    "1. **Rhythm & Structure (REPLICATE THIS):**",
+    "   Match sentence lengths, clause structures, punctuation patterns (e.g., dashes, ellipses), paragraph cadence, and overall flow from the Raw Reference Writing Samples.",
+    "",
+    "2. **Tone & Voice Parameters (REPLICATE THIS):**",
+    "   Match the overall formality, energy level, and perspective described in the Extracted Voice Profile.",
+    "",
+    "3. **CRITICAL ANTI-LEAKAGE CONSTRAINTS (STRICT ISOLATION):**",
+    "   - **No Vocabulary/Metaphor Bleed:** Do NOT use any specific nouns, adjectives, idioms, or metaphors present in the Raw Reference Writing Samples (e.g., words like \"sanctuary\", \"battlefield\", specific product names, or unique domain terminology).",
+    "   - **No Topic Leakage:** Do NOT borrow facts, opinions, stories, or themes from the samples.",
+    "   - **Vocabulary Generation:** Generate entirely NEW vocabulary suited for the Topic / Target Prompt while adhering only to the structural and rhythmic framework of the samples.",
+    "",
+    "4. **Output:** Generate the content directly based on the Topic / Target Prompt, using the style and rhythm derived from the raw reference samples. Output only the generated text — no meta-commentary, no markdown. Avoid all AI-writing tells: no em dashes used excessively, no hedging language, no formulaic transition phrases.",
   ]
 
   if (params.conversationHistory.length > 0) {
