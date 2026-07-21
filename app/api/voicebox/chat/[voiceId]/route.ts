@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { callOpenRouter } from "@/lib/cost-guard"
+import { callGroq } from "@/lib/cost-guard"
 import {
   buildChatDraftPrompt,
   buildChatStylePrompt,
@@ -101,16 +101,6 @@ export async function POST(
     )
   }
 
-  const draftModel = process.env.OPENROUTER_CHAT_DRAFT_MODEL
-  const styleModel = process.env.OPENROUTER_CHAT_STYLE_MODEL
-
-  if (!draftModel || !styleModel) {
-    return NextResponse.json(
-      { error: "Chat models not configured" },
-      { status: 500 },
-    )
-  }
-
   const generations = await prisma.generation.findMany({
     where: { voiceId },
     orderBy: { createdAt: "asc" },
@@ -129,14 +119,11 @@ export async function POST(
 
   let draftResult: unknown
   try {
-    draftResult = await callOpenRouter(
-      [
-        { role: "system", content: draftPrompt },
-        ...conversationHistory,
-        { role: "user", content: message },
-      ],
-      draftModel,
-    )
+    draftResult = await callGroq([
+      { role: "system", content: draftPrompt },
+      ...conversationHistory,
+      { role: "user", content: message },
+    ])
   } catch (e) {
     const errMsg = e instanceof Error ? e.message : "Unknown error"
     return NextResponse.json(
@@ -166,10 +153,9 @@ export async function POST(
 
   let styleResult: unknown
   try {
-    styleResult = await callOpenRouter(
-      [{ role: "system", content: stylePrompt }],
-      styleModel,
-    )
+    styleResult = await callGroq([
+      { role: "system", content: stylePrompt },
+    ])
   } catch (e) {
     const errMsg = e instanceof Error ? e.message : "Unknown error"
     return NextResponse.json(
@@ -190,6 +176,8 @@ export async function POST(
     )
   }
 
+  const model = process.env.GROQ_MODEL || ""
+
   const generation = await prisma.generation.create({
     data: {
       userId: session.user.id,
@@ -197,8 +185,8 @@ export async function POST(
       userMsg: message,
       draft,
       reply,
-      draftModel,
-      styleModel,
+      draftModel: model,
+      styleModel: model,
     },
   })
 
@@ -209,8 +197,8 @@ export async function POST(
     userMsg: generation.userMsg,
     draft: generation.draft,
     reply: generation.reply,
-    draftModel: generation.draftModel,
-    styleModel: generation.styleModel,
+    draftModel: model,
+    styleModel: model,
     createdAt: generation.createdAt.toISOString(),
   }
 

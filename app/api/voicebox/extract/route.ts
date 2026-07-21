@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { toVoice } from "@/lib/voice"
-import { callOpenRouter } from "@/lib/cost-guard"
+import { callGroq } from "@/lib/cost-guard"
 import {
   buildAnalyzeSamplesPrompt,
   buildStructureProfilePrompt,
@@ -34,47 +34,43 @@ export async function POST(req: NextRequest) {
     writerName: sourceType === "writer" ? record.name : undefined,
   })
 
-  let openRouterResult: unknown
+  let groqResult: unknown
   try {
-    openRouterResult = await callOpenRouter([
+    groqResult = await callGroq([
       { role: "user", content: analyzePrompt },
     ])
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error"
-    console.error("[extract] OpenRouter call failed:", message)
+    console.error("[extract] Groq analysis call failed:", message)
     return NextResponse.json(
       { error: `Analysis failed: ${message}` },
       { status: 502 },
     )
   }
 
-  const openRouterBody = openRouterResult as {
+  const groqBody = groqResult as {
     choices?: { message?: { content?: string } }[]
   }
   const rawAnalysis =
-    openRouterBody?.choices?.[0]?.message?.content || ""
+    groqBody?.choices?.[0]?.message?.content || ""
 
   if (!rawAnalysis) {
     return NextResponse.json(
-      { error: "Analysis failed: no content in OpenRouter response" },
+      { error: "Analysis failed: no content in response" },
       { status: 502 },
     )
   }
-
-  const structureModel =
-    process.env.OPENROUTER_STRUCTURE_MODEL
 
   const structurePrompt = buildStructureProfilePrompt(rawAnalysis)
 
   let structureResult: unknown
   try {
-    structureResult = await callOpenRouter(
-      [{ role: "user", content: structurePrompt }],
-      structureModel,
-    )
+    structureResult = await callGroq([
+      { role: "user", content: structurePrompt },
+    ])
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error"
-    console.error("[extract] Structure call failed:", message)
+    console.error("[extract] Groq structure call failed:", message)
     return NextResponse.json(
       { error: `Refinement failed: ${message}` },
       { status: 502 },
