@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { callGroq } from "@/lib/cost-guard"
+import { checkSentenceRestructuring } from "@/lib/style-check"
 import {
   buildChatDraftPrompt,
   buildChatStylePrompt,
@@ -176,6 +177,19 @@ export async function POST(
     return NextResponse.json(
       { error: "Style rewrite failed: no content in response" },
       { status: 502 },
+    )
+  }
+
+  const check = checkSentenceRestructuring(draft, reply)
+  if (!check.passed) {
+    console.error("[style-check] FAILED", JSON.stringify(check))
+    return NextResponse.json(
+      {
+        error: "style_transfer_failed",
+        message:
+          "The rewrite didn't sufficiently change sentence structure. Please try again.",
+      },
+      { status: 422 },
     )
   }
 

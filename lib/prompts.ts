@@ -94,8 +94,9 @@ export function buildChatStylePrompt(params: {
     params.draft,
     "",
     "### STRICT STYLE MATCHING RULES:",
-    "1. **Rhythm & Structure (REPLICATE THIS):**",
+    "1. **Rhythm & Structure — MUST GENUINELY RESTRUCTURE (REPLICATE THIS):**",
     "   Match sentence lengths, clause structures, punctuation patterns (e.g., dashes, ellipses), paragraph cadence, and overall flow from the Raw Reference Writing Samples.",
+    "   **Do NOT keep the same sentence boundaries as the Content to Rewrite.** You must split long sentences, merge short adjacent ones, reorder clauses, and change where sentences begin and end to match the reference samples' rhythm. If the output has the same sentence breaks as the input, you have failed.",
     "",
     "2. **Tone & Voice Parameters (REPLICATE THIS):**",
     "   Match the overall formality, energy level, and perspective described in the Extracted Voice Profile.",
@@ -120,7 +121,7 @@ export function buildChatStylePrompt(params: {
   }
 
   lines.push('')
-  lines.push('Now rewrite the Content to Rewrite above in the user\'s voice. Preserve every specific detail. Only change: sentence rhythm, vocabulary choices, punctuation habits, and structural patterns. Output only the rewritten text — no commentary, no markdown.')
+  lines.push('Now rewrite the Content to Rewrite above in the user\'s voice. Preserve every specific detail but genuinely restructure the sentence boundaries (merge, split, reorder clauses) to match the reference samples\' rhythm. Do not keep the same sentence breaks. Output only the rewritten text — no commentary, no markdown.')
 
   return lines.join("\n")
 }
