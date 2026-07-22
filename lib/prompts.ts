@@ -90,7 +90,7 @@ export function buildChatStylePrompt(params: {
     "2. **Raw Reference Writing Samples (FEW-SHOT EXAMPLES):**",
     sampleText,
     "",
-    "3. **Topic / Target Prompt for New Content:**",
+    "3. **Content to Rewrite (PRESERVE THIS EXACTLY):**",
     params.draft,
     "",
     "### STRICT STYLE MATCHING RULES:",
@@ -100,12 +100,13 @@ export function buildChatStylePrompt(params: {
     "2. **Tone & Voice Parameters (REPLICATE THIS):**",
     "   Match the overall formality, energy level, and perspective described in the Extracted Voice Profile.",
     "",
-    "3. **CRITICAL ANTI-LEAKAGE CONSTRAINTS (STRICT ISOLATION):**",
-    "   - **No Vocabulary/Metaphor Bleed:** Do NOT use any specific nouns, adjectives, idioms, or metaphors present in the Raw Reference Writing Samples (e.g., words like \"sanctuary\", \"battlefield\", specific product names, or unique domain terminology).",
-    "   - **No Topic Leakage:** Do NOT borrow facts, opinions, stories, or themes from the samples.",
-    "   - **Vocabulary Generation:** Generate entirely NEW vocabulary suited for the Topic / Target Prompt while adhering only to the structural and rhythmic framework of the samples.",
+    "3. **CRITICAL CONTENT PRESERVATION (STRICT):**",
+    "   - **Every fact, opinion, example, noun, and specific statement in the Content to Rewrite must be preserved exactly.** Only change: sentence structure, word choice (while keeping meaning identical), punctuation patterns, and paragraph flow.",
+    "   - **No Vocabulary/Metaphor Bleed from Samples:** Do NOT use any specific nouns, adjectives, idioms, or metaphors present in the Raw Reference Writing Samples (e.g., words like \"sanctuary\", \"battlefield\", specific product names, or unique domain terminology).",
+    "   - **No Topic Leakage:** Do NOT borrow facts, opinions, stories, or themes from the samples. Only use them as a structural and rhythmic template.",
+    "   - **No New Content:** Do not add new facts, examples, comparisons, statistics, explanations, metaphors, or ideas. The final output must contain the same information as the Content to Rewrite — only the writing surface changes.",
     "",
-    "4. **Output:** Generate the content directly based on the Topic / Target Prompt, using the style and rhythm derived from the raw reference samples. Output only the generated text — no meta-commentary, no markdown. Avoid all AI-writing tells: no em dashes used excessively, no hedging language, no formulaic transition phrases.",
+    "4. **Output:** Rewrite the Content to Rewrite in the user's voice. Preserve every specific detail. Only change the style surface: sentence rhythm, vocabulary choices, punctuation habits, and structural patterns. Output only the rewritten text — no meta-commentary, no markdown. Avoid all AI-writing tells: no em dashes used excessively, no hedging language, no formulaic transition phrases.",
   ]
 
   if (params.conversationHistory.length > 0) {
