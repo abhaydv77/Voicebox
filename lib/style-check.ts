@@ -55,7 +55,7 @@ export function checkSentenceRestructuring(
 
   if (inCount === outCount) {
     const closePairs = inputSentences.filter((s, i) => {
-      const outWords = outSentences[i]?.split(/\s+/).length ?? 0
+      const outWords = outputSentences[i]?.split(/\s+/).length ?? 0
       const inWords = s.split(/\s+/).length
       return Math.abs(inWords - outWords) <= 3
     }).length
