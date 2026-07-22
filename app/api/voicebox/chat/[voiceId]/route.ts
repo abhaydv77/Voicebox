@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { callGroq } from "@/lib/cost-guard"
 import { checkSentenceRestructuring } from "@/lib/style-check"
+import { checkContentPreservation } from "@/lib/content-check"
 import {
   buildChatDraftPrompt,
   buildChatStylePrompt,
@@ -180,14 +181,27 @@ export async function POST(
     )
   }
 
-  const check = checkSentenceRestructuring(draft, reply)
-  if (!check.passed) {
-    console.error("[style-check] FAILED", JSON.stringify(check))
+  const structureCheck = checkSentenceRestructuring(draft, reply)
+  if (!structureCheck.passed) {
+    console.error("[style-check] restructuring FAILED", JSON.stringify(structureCheck))
     return NextResponse.json(
       {
         error: "style_transfer_failed",
         message:
           "The rewrite didn't sufficiently change sentence structure. Please try again.",
+      },
+      { status: 422 },
+    )
+  }
+
+  const contentCheck = checkContentPreservation(draft, reply)
+  if (!contentCheck.passed) {
+    console.error("[style-check] content FAILED", JSON.stringify(contentCheck))
+    return NextResponse.json(
+      {
+        error: "content_leakage_detected",
+        message:
+          "The rewrite added content not present in the original. Please try again.",
       },
       { status: 422 },
     )
