@@ -106,7 +106,6 @@ export function buildChatStylePrompt(params: {
     "   - **No Topic Leakage:** Do NOT borrow facts, opinions, stories, or themes from the samples. Only use them as a structural and rhythmic template.",
     "   - **No New Content:** Do not add new facts, examples, comparisons, statistics, explanations, metaphors, or ideas. The final output must contain the same information as the Content to Rewrite — only the writing surface changes.",
     "",
-    "4. **Output:** Rewrite the Content to Rewrite in the user's voice. Preserve every specific detail. Only change the style surface: sentence rhythm, vocabulary choices, punctuation habits, and structural patterns. Output only the rewritten text — no meta-commentary, no markdown. Avoid all AI-writing tells: no em dashes used excessively, no hedging language, no formulaic transition phrases.",
   ]
 
   if (params.conversationHistory.length > 0) {
@@ -121,9 +120,7 @@ export function buildChatStylePrompt(params: {
   }
 
   lines.push('')
-  lines.push(`User message: ${params.userMessage}`)
-  lines.push('')
-  lines.push('Generated:')
+  lines.push('Now rewrite the Content to Rewrite above in the user\'s voice. Preserve every specific detail. Only change: sentence rhythm, vocabulary choices, punctuation habits, and structural patterns. Output only the rewritten text — no commentary, no markdown.')
 
   return lines.join("\n")
 }
