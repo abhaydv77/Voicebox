@@ -58,9 +58,11 @@ export async function POST(
   const { voiceId } = await params
 
   let message: string
+  let tone: string | undefined
   try {
     const body = await req.json()
     message = body.message
+    tone = body.tone
   } catch {
     return NextResponse.json(
       { error: "Invalid JSON in request body" },
@@ -152,6 +154,7 @@ export async function POST(
     profile,
     samples,
     draft,
+    tone,
     userMessage: message,
     conversationHistory,
   })

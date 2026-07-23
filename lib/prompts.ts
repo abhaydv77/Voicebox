@@ -71,12 +71,13 @@ export function buildChatStylePrompt(params: {
   profile: import("./types").VoiceProfileData
   samples: string[]
   draft: string
+  tone?: string
   userMessage: string
   conversationHistory: { role: "user" | "assistant"; content: string }[]
 }): string {
   const profile = params.profile
   const sampleText = params.samples.join("\n\n---\n\n")
-  const lines = [
+  const lines: string[] = [
     "You are an expert ghostwriter and voice-cloning assistant. Your objective is to write new content that perfectly matches the user's personal writing style.",
     "",
     "### Inputs Provided:",
@@ -100,14 +101,26 @@ export function buildChatStylePrompt(params: {
     "",
     "2. **Tone & Voice Parameters (REPLICATE THIS):**",
     "   Match the overall formality, energy level, and perspective described in the Extracted Voice Profile.",
-    "",
-    "3. **CRITICAL CONTENT PRESERVATION (STRICT):**",
-    "   - **Every fact, opinion, example, noun, and specific statement in the Content to Rewrite must be preserved exactly.** Only change: sentence structure, word choice (while keeping meaning identical), punctuation patterns, and paragraph flow.",
-    "   - **No Vocabulary/Metaphor Bleed from Samples:** Do NOT use any specific nouns, adjectives, idioms, or metaphors present in the Raw Reference Writing Samples (e.g., words like \"sanctuary\", \"battlefield\", specific product names, or unique domain terminology).",
-    "   - **No Topic Leakage:** Do NOT borrow facts, opinions, stories, or themes from the samples. Only use them as a structural and rhythmic template.",
-    "   - **No New Content:** Do not add new facts, examples, comparisons, statistics, explanations, metaphors, or ideas. The final output must contain the same information as the Content to Rewrite — only the writing surface changes.",
-    "",
   ]
+
+  if (params.tone) {
+    const toneInstruction = `   **Override Tone:** Write with a **${params.tone}** tone. ${
+      params.tone === "casual"
+        ? "Use relaxed, conversational language."
+        : params.tone === "professional"
+          ? "Use polished, business-appropriate language."
+          : "Use clever, playful, or humorous language."
+    }"`
+    lines.push(toneInstruction)
+  }
+
+  lines.push("")
+  lines.push("3. **CRITICAL CONTENT PRESERVATION (STRICT):**")
+  lines.push("   - **Every fact, opinion, example, noun, and specific statement in the Content to Rewrite must be preserved exactly.** Only change: sentence structure, word choice (while keeping meaning identical), punctuation patterns, and paragraph flow.")
+  lines.push("   - **No Vocabulary/Metaphor Bleed from Samples:** Do NOT use any specific nouns, adjectives, idioms, or metaphors present in the Raw Reference Writing Samples (e.g., words like \"sanctuary\", \"battlefield\", specific product names, or unique domain terminology).")
+  lines.push("   - **No Topic Leakage:** Do NOT borrow facts, opinions, stories, or themes from the samples. Only use them as a structural and rhythmic template.")
+  lines.push("   - **No New Content:** Do not add new facts, examples, comparisons, statistics, explanations, metaphors, or ideas. The final output must contain the same information as the Content to Rewrite — only the writing surface changes.")
+  lines.push("")
 
   if (params.conversationHistory.length > 0) {
     lines.push('')

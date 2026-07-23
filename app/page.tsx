@@ -1,8 +1,9 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
-import { Sparkles, ArrowRight, Sun, Moon } from "lucide-react"
+import { Sparkles, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export default async function Home() {
   const session = await auth()
@@ -12,10 +13,7 @@ export default async function Home() {
     <div className="flex flex-1 items-center justify-center px-8 py-12">
       <div className="relative max-w-[720px] w-full shadow-[0_1px_0_rgba(0,0,0,0.02),0_24px_80px_rgba(0,0,0,0.06)] rounded-3xl border border-border overflow-hidden">
         <div className="absolute right-6 top-6">
-          <button className="inline-flex transition-colors font-medium rounded-full text-sm leading-5 border border-border px-3 py-1.5 items-center gap-2">
-            <Sun className="size-4" />
-            <Moon className="size-4" />
-          </button>
+          <ThemeToggle className="inline-flex transition-colors font-medium rounded-full text-sm leading-5 border border-border px-3 py-1.5 items-center gap-2" />
         </div>
         <div className="flex flex-col items-center gap-8 px-8 py-16 text-center">
           <div className="inline-flex shadow-sm rounded-full border border-border px-4 py-2 items-center gap-2">

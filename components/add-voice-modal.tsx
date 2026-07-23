@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
-import { ArrowRight, BookOpen, Loader2, Moon, PenLine, Sun, X } from "lucide-react"
+import { ArrowRight, BookOpen, Loader2, PenLine, X } from "lucide-react"
+import { toast } from "sonner"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 interface AddVoiceModalProps {
   open: boolean
@@ -92,7 +94,10 @@ export function AddVoiceModal({ open, onOpenChange, onVoiceAdded }: AddVoiceModa
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ voiceId: newVoice.id }),
-      }).catch(() => {})
+      }).catch((err) => {
+        console.error("Extraction failed:", err)
+        toast.error("Voice extraction failed. You can retry from the voice settings.")
+      })
 
       onVoiceAdded(newVoice)
 
@@ -144,10 +149,7 @@ export function AddVoiceModal({ open, onOpenChange, onVoiceAdded }: AddVoiceModa
                     Give your voice a name and choose how to train it.
                   </p>
                 </div>
-                <button className="inline-flex transition-colors font-medium rounded-full text-sm leading-5 border border-border px-3 py-1.5 items-center gap-2 shrink-0">
-                  <Sun className="size-4" />
-                  <Moon className="size-4" />
-                </button>
+                <ThemeToggle className="inline-flex transition-colors font-medium rounded-full text-sm leading-5 border border-border px-3 py-1.5 items-center gap-2 shrink-0" />
               </div>
 
               {error && <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">{error}</div>}

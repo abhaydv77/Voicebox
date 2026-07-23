@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
-import { ArrowLeft, Settings, Loader2, Send, Trash2, Save, Copy, Check, Sparkles, MoonStar } from "lucide-react"
+import { ArrowLeft, Settings, Loader2, Send, Trash2, Save, Copy, Check, Sparkles } from "lucide-react"
+import { ThemeToggleMinimal } from "@/components/theme-toggle"
 
 interface ChatPageProps {
   params: Promise<{ voiceId: string }>
@@ -194,9 +195,7 @@ export default function ChatPage({ params }: ChatPageProps) {
               <Sparkles className="size-4" />
               Show draft
             </Button>
-            <Button size="sm" variant="outline">
-              <MoonStar className="size-4" />
-            </Button>
+            <ThemeToggleMinimal className="inline-flex items-center justify-center rounded-lg text-sm font-medium leading-5 transition-colors border border-border h-9 px-3 hover:bg-accent hover:text-accent-foreground" />
             <Button
               variant="ghost"
               size="icon"
