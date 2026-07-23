@@ -1,0 +1,9 @@
+# Screen 4
+
+This is a code bundle for Screen 4. It's based on default Vite project. The original design is available at https://app.flowstep.ai/file?activeFileId=7fc69894-7dea-4d36-89a5-fdc69648ffeb.
+
+## Running the code
+
+Run `npm i` and `npm run setup` to install the dependencies.
+
+Run `npm run dev` to start the development server.

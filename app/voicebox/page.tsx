@@ -8,7 +8,7 @@ import { AuthForm } from "@/components/auth-form"
 import { AddVoiceModal } from "@/components/add-voice-modal"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Plus, LogOut, Sparkles, TriangleAlert, User } from "lucide-react"
+import { Plus, LogOut, Sparkles, Sun, Moon, TriangleAlert, User } from "lucide-react"
 
 const AVATAR_COLORS = [
   "bg-blue-100 text-blue-700",
@@ -78,6 +78,10 @@ export default function VoiceBoxPage() {
           <span className="font-semibold text-lg">VoiceBox</span>
         </div>
         <div className="flex items-center gap-4">
+          <button className="inline-flex transition-colors font-medium rounded-full text-sm leading-5 border border-border px-3 py-1.5 items-center gap-2">
+            <Sun className="size-4" />
+            <Moon className="size-4" />
+          </button>
           <div className="text-sm flex items-center gap-2 text-muted-foreground">
             <User className="size-4" />
             <span>{session?.user?.email}</span>

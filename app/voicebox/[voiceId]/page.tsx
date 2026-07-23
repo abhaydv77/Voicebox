@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
-import { ArrowLeft, Settings, Loader2, Send, Trash2, Save, Copy, Check, Sparkles } from "lucide-react"
+import { ArrowLeft, Settings, Loader2, Send, Trash2, Save, Copy, Check, Sparkles, MoonStar } from "lucide-react"
 
 interface ChatPageProps {
   params: Promise<{ voiceId: string }>
@@ -191,8 +191,11 @@ export default function ChatPage({ params }: ChatPageProps) {
               variant={showDraft ? "default" : "outline"}
               onClick={() => setShowDraft(!showDraft)}
             >
-              <Sparkles className="size-4 mr-1.5" />
+              <Sparkles className="size-4" />
               Show draft
+            </Button>
+            <Button size="sm" variant="outline">
+              <MoonStar className="size-4" />
             </Button>
             <Button
               variant="ghost"

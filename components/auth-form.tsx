@@ -4,7 +4,7 @@ import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Sparkles, Loader2 } from "lucide-react"
+import { Sparkles, Loader2, Sun } from "lucide-react"
 
 export function AuthForm() {
   const [mode, setMode] = useState<"login" | "signup">("login")
@@ -61,7 +61,10 @@ export function AuthForm() {
   }
 
   return (
-    <div className="max-w-[420px] w-full">
+    <div className="max-w-[420px] w-full flex flex-col items-center gap-6">
+      <button className="transition-colors font-medium rounded-full text-sm leading-5 border border-border flex px-4 items-center gap-2 h-10">
+        <Sun className="size-4" />
+      </button>
       <div className="shadow-sm rounded-3xl border border-border p-8 w-full">
         <div className="flex flex-col gap-6">
           <div className="flex flex-col items-center gap-3">

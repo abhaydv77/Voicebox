@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
-import { ArrowRight, BookOpen, Loader2, PenLine, X } from "lucide-react"
+import { ArrowRight, BookOpen, Loader2, Moon, PenLine, Sun, X } from "lucide-react"
 
 interface AddVoiceModalProps {
   open: boolean
@@ -137,11 +137,17 @@ export function AddVoiceModal({ open, onOpenChange, onVoiceAdded }: AddVoiceModa
 
           {step === 1 && (
             <div className="flex flex-col gap-6">
-              <div>
-                <h2 className="font-semibold text-xl">Name &amp; Source</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Give your voice a name and choose how to train it.
-                </p>
+              <div className="flex w-full justify-between items-center gap-4">
+                <div>
+                  <h2 className="font-semibold text-xl">Name &amp; Source</h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Give your voice a name and choose how to train it.
+                  </p>
+                </div>
+                <button className="inline-flex transition-colors font-medium rounded-full text-sm leading-5 border border-border px-3 py-1.5 items-center gap-2 shrink-0">
+                  <Sun className="size-4" />
+                  <Moon className="size-4" />
+                </button>
               </div>
 
               {error && <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">{error}</div>}
