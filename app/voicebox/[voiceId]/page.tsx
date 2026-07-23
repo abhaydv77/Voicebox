@@ -7,12 +7,26 @@ import { useSession } from "next-auth/react"
 import type { Voice, Generation } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
-import { ArrowLeft, Settings, Loader2, Send, Trash2, Save } from "lucide-react"
+import { ArrowLeft, Settings, Loader2, Send, Trash2, Save, Copy, Check, Sparkles } from "lucide-react"
 
 interface ChatPageProps {
   params: Promise<{ voiceId: string }>
+}
+
+const AVATAR_COLORS = [
+  "bg-blue-100 text-blue-700",
+  "bg-green-100 text-green-700",
+  "bg-purple-100 text-purple-700",
+  "bg-orange-100 text-orange-700",
+  "bg-pink-100 text-pink-700",
+  "bg-teal-100 text-teal-700",
+]
+
+function getAvatarColor(name: string) {
+  return AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length]
 }
 
 export default function ChatPage({ params }: ChatPageProps) {
@@ -28,6 +42,9 @@ export default function ChatPage({ params }: ChatPageProps) {
   const [editingName, setEditingName] = useState("")
   const [deleteConfirm, setDeleteConfirm] = useState("")
   const [error, setError] = useState("")
+  const [showDraft, setShowDraft] = useState(false)
+  const [tone, setTone] = useState<"casual" | "professional" | "witty">("casual")
+  const [copiedId, setCopiedId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -71,7 +88,7 @@ export default function ChatPage({ params }: ChatPageProps) {
       const res = await fetch(`/api/voicebox/chat/${voice.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMsg }),
+        body: JSON.stringify({ message: userMsg, tone }),
       })
 
       if (!res.ok) {
@@ -86,6 +103,12 @@ export default function ChatPage({ params }: ChatPageProps) {
     } finally {
       setIsSending(false)
     }
+  }
+
+  const handleCopy = async (text: string, id: string) => {
+    await navigator.clipboard.writeText(text)
+    setCopiedId(id)
+    setTimeout(() => setCopiedId(null), 2000)
   }
 
   const handleSaveName = async () => {
@@ -147,150 +170,201 @@ export default function ChatPage({ params }: ChatPageProps) {
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="border-b border-border flex items-center justify-between px-6 py-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex items-center gap-4">
-          <Link href="/voicebox">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <h1 className="text-xl font-semibold">{voice.name}</h1>
-        </div>
-
-        <button
-          onClick={() => {
-            setEditingName(voice.name)
-            setShowSettings(true)
-          }}
-          className="p-2 rounded-lg hover:bg-muted transition-colors"
-        >
-          <Settings className="h-5 w-5" />
-        </button>
-      </header>
-
-      {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
-        {generations.length === 0 ? (
-          <div className="h-full flex items-center justify-center">
-            <div className="text-center max-w-sm">
-              <h2 className="text-xl font-semibold mb-2">Start a conversation</h2>
-              <p className="text-muted-foreground mb-4">
-                Share your ideas and I&apos;ll draft responses in {voice.name}&apos;s voice.
-              </p>
-              <p className="text-sm text-muted-foreground bg-muted rounded-lg p-3 italic">
-                &quot;What would be a good topic to explore in my next post?&quot;
-              </p>
+      <header className="shrink-0 backdrop-blur bg-background/95 border-b border-border">
+        <div className="max-w-[1140px] flex mx-auto px-6 justify-between items-center h-16">
+          <div className="flex items-center gap-3">
+            <Link href="/voicebox">
+              <Button variant="ghost" size="icon" className="size-9 rounded-full">
+                <ArrowLeft className="size-5" />
+              </Button>
+            </Link>
+            <div className="flex items-center gap-3">
+              <span className={`size-8 font-semibold rounded-full text-sm flex items-center justify-center ${getAvatarColor(voice.name)}`}>
+                {voice.name.charAt(0).toUpperCase()}
+              </span>
+              <h1 className="truncate font-semibold text-base">{voice.name}</h1>
             </div>
           </div>
-        ) : (
-          <>
-            {generations.map((gen) => (
-              <div key={gen.id} className="space-y-2">
-                {/* User Message */}
-                <div className="flex justify-end">
-                  <div className="max-w-sm bg-gray-200 dark:bg-gray-700 text-foreground px-4 py-2 rounded-lg">
-                    <p className="text-sm">{gen.userMsg}</p>
-                  </div>
-                </div>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant={showDraft ? "default" : "outline"}
+              onClick={() => setShowDraft(!showDraft)}
+            >
+              <Sparkles className="size-4 mr-1.5" />
+              Show draft
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-9 rounded-full"
+              onClick={() => { setEditingName(voice.name); setShowSettings(true) }}
+            >
+              <Settings className="size-5" />
+            </Button>
+          </div>
+        </div>
+      </header>
 
-                {/* Assistant Message */}
-                <div className="flex justify-start">
-                  <div className="max-w-sm bg-card border border-border text-card-foreground px-4 py-2 rounded-lg">
-                    <p className="text-sm">{gen.reply}</p>
-                  </div>
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-[1140px] mx-auto px-6 py-8 h-full">
+          <div className="max-w-3xl mx-auto flex flex-col gap-8 w-full h-full">
+            {generations.length === 0 ? (
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center max-w-sm">
+                  <h2 className="text-xl font-semibold mb-2">Start a conversation</h2>
+                  <p className="text-muted-foreground mb-4">
+                    Share your ideas and I&apos;ll draft responses in {voice.name}&apos;s voice.
+                  </p>
+                  <p className="text-sm text-muted-foreground bg-muted rounded-lg p-3 italic">
+                    &quot;What would be a good topic to explore in my next post?&quot;
+                  </p>
                 </div>
               </div>
-            ))}
-            <div ref={messagesEndRef} />
-          </>
-        )}
+            ) : (
+              <>
+                {generations.map((gen) => (
+                  <div key={gen.id} className="space-y-3">
+                    {/* User Message */}
+                    <div className="flex justify-end">
+                      <div className="max-w-[80%] flex flex-col items-end gap-1">
+                        <div className="bg-muted text-foreground px-4 py-2.5 rounded-lg">
+                          <p className="text-sm leading-6">{gen.userMsg}</p>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(gen.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                    </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded px-4 py-2 text-red-600 text-sm">{error}</div>
-        )}
+                    {/* Assistant Message */}
+                    <div className="flex justify-start">
+                      <div className="max-w-[85%] flex flex-col items-start gap-1">
+                        <Card className="border-border shadow-none relative">
+                          <button
+                            onClick={() => handleCopy(gen.reply, gen.id)}
+                            className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            {copiedId === gen.id ? (
+                              <Check className="size-4 text-green-600" />
+                            ) : (
+                              <Copy className="size-4" />
+                            )}
+                          </button>
+                          <CardContent className="pt-6 pr-12 pb-4 pl-4 gap-3">
+                            <p className="text-sm leading-6">{gen.reply}</p>
+                            {showDraft && gen.draft && (
+                              <>
+                                <Separator className="my-3" />
+                                <p className="text-sm leading-6 text-muted-foreground">{gen.draft}</p>
+                              </>
+                            )}
+                          </CardContent>
+                        </Card>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(gen.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </>
+            )}
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-600 text-sm">{error}</div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Input Bar */}
       <div className="border-t border-border p-4 bg-background">
-        <div className="mx-auto max-w-4xl flex gap-2">
-          <Input
-            placeholder="Type your idea..."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-                e.preventDefault()
-                handleSendMessage()
-              }
-            }}
-            disabled={isSending}
-            maxLength={2000}
-            className="flex-1"
-          />
-          <Button
-            onClick={handleSendMessage}
-            disabled={isSending || !message.trim()}
-            size="icon"
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          </Button>
+        <div className="max-w-3xl mx-auto flex flex-col gap-3 w-full">
+          {/* Tone presets */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground font-medium">Tone:</span>
+            {(["casual", "professional", "witty"] as const).map((t) => (
+              <Button
+                key={t}
+                size="sm"
+                variant={tone === t ? "default" : "outline"}
+                onClick={() => setTone(t)}
+                className="capitalize"
+              >
+                {t}
+              </Button>
+            ))}
+          </div>
+
+          {/* Input row */}
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="Type your idea..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                  e.preventDefault()
+                  handleSendMessage()
+                }
+              }}
+              disabled={isSending}
+              className="flex-1"
+            />
+            <Button
+              onClick={handleSendMessage}
+              disabled={isSending || !message.trim()}
+              className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+            >
+              {isSending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+              Send
+            </Button>
+          </div>
         </div>
-        {message.length > 1800 && (
-          <p className="text-xs text-muted-foreground mt-2 text-right">
-            {2000 - message.length} characters remaining
-          </p>
-        )}
       </div>
 
       {/* Settings Modal */}
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Voice Settings</DialogTitle>
-            <DialogDescription>Manage your voice profile</DialogDescription>
+            <DialogTitle>Voice settings</DialogTitle>
+            <DialogDescription>Rename or delete this voice profile.</DialogDescription>
           </DialogHeader>
-
-          <div className="space-y-6">
-            {/* Rename Section */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">Voice Name</label>
-              <Input
-                value={editingName}
-                onChange={(e) => setEditingName(e.target.value)}
-                placeholder="Enter new name"
-              />
-              <Button onClick={handleSaveName} className="w-full mt-2">
-                <Save className="h-4 w-4 mr-2" />
-                Save Name
+          <div className="flex flex-col gap-2">
+            <label className="font-medium text-sm">Voice name</label>
+            <div className="flex items-center gap-2">
+              <Input value={editingName} onChange={(e) => setEditingName(e.target.value)} />
+              <Button onClick={handleSaveName} className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+                <Save className="size-4" />
+                Save
               </Button>
             </div>
-
-            <Separator />
-
-            {/* Delete Section */}
-            <div>
-              <h3 className="font-medium text-destructive mb-2 flex items-center gap-2">
-                <Trash2 className="h-4 w-4" />
-                Delete Voice
-              </h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                This action cannot be undone. Type the voice name to confirm deletion.
-              </p>
-              <Input
-                placeholder={`Type "${voice.name}" to confirm`}
-                value={deleteConfirm}
-                onChange={(e) => setDeleteConfirm(e.target.value)}
-              />
-              <Button
-                onClick={handleDeleteVoice}
-                disabled={deleteConfirm !== voice.name}
-                variant="destructive"
-                className="w-full mt-2"
-              >
-                Delete Voice
-              </Button>
+          </div>
+          <Separator />
+          <div>
+            <div className="flex flex-col gap-1 mb-3">
+              <span className="font-medium text-destructive text-sm">Delete voice</span>
+              <span className="text-xs text-muted-foreground">
+                Type &quot;{voice.name}&quot; to confirm. This cannot be undone.
+              </span>
             </div>
+            <Input
+              placeholder={voice.name}
+              value={deleteConfirm}
+              onChange={(e) => setDeleteConfirm(e.target.value)}
+            />
+            <Button
+              onClick={handleDeleteVoice}
+              disabled={deleteConfirm !== voice.name}
+              variant="destructive"
+              className="w-full mt-2 gap-2"
+            >
+              <Trash2 className="size-4" />
+              Delete voice
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
